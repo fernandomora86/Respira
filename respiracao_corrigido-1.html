@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#080b12">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Respiração">
+<title>RESPIRAÇÃO</title>
+<link rel="manifest" id="manifestLink">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#fff;overscroll-behavior:none;-webkit-tap-highlight-color:transparent;}
+:root{--cyan:#7ce3f6;--cyan2:#00f2fe;--cyan3:#4facfe;--dim:#667b96;--surface:#1a2235;--safe-top:env(safe-area-inset-top,0px);--safe-bottom:env(safe-area-inset-bottom,0px);}
+body{display:flex;flex-direction:column;padding-top:var(--safe-top);padding-bottom:var(--safe-bottom);background:radial-gradient(circle at center,#1a2a42 0%,#080b12 100%);}
+
+/* HEADER */
+header{display:flex;justify-content:space-between;align-items:center;padding:36px 20px 16px;flex-shrink:0;}
+.title-wrapper{display:flex;align-items:center;gap:10px;margin:0 auto}
+.title-wrapper h1{font-size:1.1rem;font-weight:400;letter-spacing:3px;color:var(--cyan);text-transform:uppercase;}
+.decorator{color:#4a8b9e;font-size:1.2rem}
+#hdr-ratio{font-size:0.75rem;color:var(--dim);letter-spacing:1px;position:absolute;right:20px;}
+
+/* TABS */
+.tabs{display:flex;justify-content:space-around;padding:0 10px;border-bottom:1px solid rgba(255,255,255,0.05);flex-shrink:0;}
+.tab{display:flex;flex-direction:column;align-items:center;gap:6px;padding:14px 0;color:var(--cyan);font-size:0.72rem;letter-spacing:1px;cursor:pointer;width:33%;position:relative;background:none;border:none;font-family:inherit;transition:opacity .2s;opacity:0.45;}
+.tab.active{opacity:1;}
+.tab.active::after{content:'';position:absolute;bottom:-1px;left:0;width:100%;height:2px;background:var(--cyan);box-shadow:0 0 10px var(--cyan);}
+.tab-icon{font-size:1.3rem}
+
+/* PAGES */
+.page{display:none;flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;flex-direction:column}
+.page.active{display:flex}
+
+/* BREATHE */
+.breathe-wrap{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:space-between;padding:16px 16px 0;}
+.profile-bar{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;padding:4px 0}
+.profile-btn{background:rgba(255,255,255,0.04);border:1px solid rgba(124,227,246,0.2);border-radius:20px;color:var(--dim);cursor:pointer;padding:6px 14px;font-size:0.72rem;letter-spacing:1px;transition:all .2s;white-space:nowrap;font-family:inherit;}
+.profile-btn.active{border-color:var(--cyan);color:var(--cyan);background:rgba(124,227,246,0.08);box-shadow:0 0 12px rgba(124,227,246,0.15);}
+
+/* CIRCLE */
+.blob-outer{flex:1;display:flex;align-items:center;justify-content:center;}
+.blob-container{position:relative;width:250px;height:250px;display:flex;justify-content:center;align-items:center;}
+.prog-svg{position:absolute;inset:0;width:100%;height:100%;transform:rotate(-90deg);z-index:5;}
+.prog-bg{fill:none;stroke:rgba(124,227,246,0.08);stroke-width:5}
+.prog-fg{fill:none;stroke:var(--cyan2);stroke-width:5;stroke-linecap:round;stroke-dasharray:678.6;stroke-dashoffset:678.6;transition:stroke .4s;filter:drop-shadow(0 0 6px var(--cyan2));}
+.breath-ring{position:absolute;border-radius:50%;pointer-events:none;}
+.ring1{width:86%;height:86%;background:radial-gradient(circle,rgba(0,242,254,.22) 0%,rgba(79,172,254,.08) 70%,transparent 100%);border:1.5px solid rgba(0,242,254,.25);box-shadow:0 0 24px rgba(0,242,254,.15);}
+.ring2{width:65%;height:65%;background:radial-gradient(circle,rgba(0,242,254,.32) 0%,rgba(79,172,254,.12) 70%,transparent 100%);border:1.5px solid rgba(0,242,254,.2);}
+.ring3{width:42%;height:42%;background:radial-gradient(circle,rgba(38,255,203,.55) 0%,rgba(0,195,255,.3) 60%,transparent 100%);box-shadow:0 0 20px rgba(0,242,254,.35);}
+.circle-center{position:absolute;inset:0;z-index:10;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;pointer-events:none;}
+#phase-label{font-size:11px;letter-spacing:3px;color:var(--cyan);text-transform:uppercase;min-height:16px;text-shadow:0 0 10px var(--cyan);}
+#phase-count{font-size:44px;font-weight:300;color:#fff;font-variant-numeric:tabular-nums;min-width:60px;text-align:center;text-shadow:0 0 20px rgba(0,242,254,.6);}
+#cycle-info{font-size:11px;color:var(--cyan);letter-spacing:1px;font-weight:600;min-height:16px;}
+
+/* CONTROLS */
+.controls{display:flex;justify-content:center;align-items:center;gap:16px;padding:24px 20px 32px;flex-shrink:0;}
+.btn-reset{background:var(--surface);border:1px solid rgba(255,255,255,0.1);color:var(--cyan);width:60px;height:60px;border-radius:50%;font-size:1.4rem;cursor:pointer;display:flex;justify-content:center;align-items:center;transition:all .3s;flex-shrink:0;}
+.btn-reset:active{background:#242f48}
+.btn-start{background:linear-gradient(90deg,var(--cyan2) 0%,var(--cyan3) 100%);border:none;color:#002b4d;font-size:1rem;font-weight:600;letter-spacing:1px;padding:0 36px;height:60px;border-radius:30px;flex-grow:1;cursor:pointer;display:flex;justify-content:center;align-items:center;gap:10px;box-shadow:0 0 30px rgba(0,242,254,.35);transition:all .3s;font-family:inherit;}
+.btn-start:active{transform:scale(.98)}
+.btn-start.running{background:rgba(0,242,254,.08);border:1px solid var(--cyan2);color:var(--cyan2);box-shadow:0 0 20px rgba(0,242,254,.2);}
+
+/* TOAST */
+#toast{position:fixed;top:80px;left:50%;transform:translateX(-50%) translateY(-20px);background:#0a1628;border:1px solid var(--cyan);border-radius:12px;padding:14px 20px;font-size:12px;letter-spacing:1px;color:var(--cyan);text-align:center;z-index:100;opacity:0;pointer-events:none;transition:opacity .3s,transform .3s;max-width:300px;line-height:1.6;box-shadow:0 0 30px rgba(0,242,254,.2);}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+#toast .toast-icon{font-size:22px;display:block;margin-bottom:6px}
+
+/* HISTÓRICO */
+.hist-body{padding:20px 16px;display:flex;flex-direction:column;gap:14px}
+.hist-stats{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.stat-card{background:rgba(255,255,255,0.04);border:1px solid rgba(124,227,246,0.12);border-radius:12px;padding:16px;text-align:center;}
+.stat-num{font-size:28px;color:var(--cyan);font-weight:300}
+.stat-lbl{font-size:9px;letter-spacing:2px;color:var(--dim);margin-top:4px}
+.stat-sub{font-size:9px;color:var(--dim);margin-top:2px}
+.record-card{background:rgba(0,242,254,.05);border:1px solid rgba(0,242,254,.3);border-radius:12px;padding:16px;display:flex;align-items:center;gap:14px;box-shadow:0 0 20px rgba(0,242,254,.08);}
+.record-icon{font-size:26px}
+.record-info{flex:1}
+.record-label{font-size:10px;letter-spacing:2px;color:var(--cyan)}
+.record-val{font-size:22px;font-weight:300;color:#fff;margin-top:2px}
+.record-sub{font-size:10px;color:var(--dim);margin-top:2px}
+.hist-section{font-size:10px;letter-spacing:2px;color:var(--dim)}
+.hist-list{display:flex;flex-direction:column;gap:8px}
+.hist-item{background:rgba(255,255,255,.03);border:1px solid rgba(124,227,246,.1);border-radius:10px;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;animation:fadeIn .2s ease;}
+.hist-item.record-item{border-color:rgba(0,242,254,.35)}
+.hi-left{display:flex;flex-direction:column;gap:3px}
+.hi-profile{font-size:13px;color:#cde}
+.hi-time{font-size:10px;color:var(--dim)}
+.hi-right{display:flex;flex-direction:column;align-items:flex-end;gap:3px}
+.hi-cycles{font-size:15px;font-weight:300;color:var(--cyan)}
+.hi-record{font-size:9px;color:#fbbf24;letter-spacing:1px}
+.hist-empty{color:var(--dim);font-size:13px;text-align:center;padding:40px 0}
+.btn-clear-hist{background:none;border:1px solid rgba(255,255,255,.1);border-radius:20px;color:var(--dim);cursor:pointer;padding:10px 24px;font-size:11px;letter-spacing:1px;align-self:center;transition:all .2s;font-family:inherit;}
+.btn-clear-hist:active{border-color:#f87171;color:#f87171}
+
+/* PROFILES */
+.profiles-body{padding:20px 16px;display:flex;flex-direction:column;gap:16px}
+.section-title{font-size:10px;letter-spacing:2px;color:var(--dim);margin-bottom:4px}
+.new-form{background:rgba(255,255,255,.04);border:1px solid rgba(124,227,246,.12);border-radius:12px;padding:18px;display:flex;flex-direction:column;gap:14px;}
+.form-row{display:flex;gap:10px;align-items:center}
+.form-label{font-size:11px;color:var(--dim);letter-spacing:1px;min-width:32px}
+.form-input{flex:1;background:rgba(0,0,0,.4);border:1px solid rgba(124,227,246,.2);border-radius:8px;color:#fff;padding:10px 14px;font-size:13px;outline:none;transition:border-color .2s;-webkit-appearance:none;font-family:inherit;}
+.form-input:focus{border-color:rgba(0,242,254,.5)}
+.form-input::placeholder{color:var(--dim)}
+.nums-row{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px}
+.num-field{display:flex;flex-direction:column;gap:6px;align-items:center}
+.num-label{font-size:9px;color:var(--dim);letter-spacing:1px;text-align:center}
+.num-input{width:100%;background:rgba(0,0,0,.4);border:1px solid rgba(124,227,246,.2);border-radius:8px;color:var(--cyan);padding:10px 4px;font-size:18px;font-weight:300;text-align:center;outline:none;-webkit-appearance:none;font-family:inherit;}
+.num-input:focus{border-color:rgba(0,242,254,.5)}
+.btn-save{background:linear-gradient(90deg,var(--cyan2) 0%,var(--cyan3) 100%);border:none;border-radius:10px;color:#002b4d;padding:12px;font-size:12px;font-weight:600;letter-spacing:2px;cursor:pointer;transition:opacity .15s;font-family:inherit;}
+.btn-save:active{opacity:.7}
+.profile-list{display:flex;flex-direction:column;gap:10px}
+.profile-item{background:rgba(255,255,255,.04);border:1px solid rgba(124,227,246,.12);border-radius:12px;padding:14px 16px;display:flex;align-items:center;gap:10px;animation:fadeIn .2s ease;}
+.profile-item.active-item{border-color:rgba(0,242,254,.35);box-shadow:0 0 15px rgba(0,242,254,.08);}
+.pi-name{flex:1;font-size:14px;color:#cde}
+.pi-ratio{font-size:12px;color:var(--cyan);letter-spacing:1px;margin-top:2px}
+.pi-desc{font-size:10px;color:var(--dim);margin-top:2px}
+.btn-use{background:none;border:1px solid rgba(124,227,246,.2);border-radius:20px;color:var(--dim);cursor:pointer;padding:6px 14px;font-size:10px;letter-spacing:1px;transition:all .2s;white-space:nowrap;font-family:inherit;}
+.btn-use.used{border-color:var(--cyan);color:var(--cyan)}
+.btn-del{background:none;border:1px solid rgba(255,255,255,.08);border-radius:8px;color:var(--dim);cursor:pointer;padding:6px 10px;font-size:13px;transition:all .15s;font-family:inherit;}
+.btn-del:active{border-color:#f87171;color:#f87171}
+.flash{font-size:11px;color:var(--cyan);letter-spacing:1px;min-height:16px;transition:opacity .3s}
+.flash.hide{opacity:0}
+.flash.err{color:#f87171}
+
+#offline-bar{display:none;background:rgba(0,242,254,.08);color:var(--dim);font-size:10px;letter-spacing:2px;text-align:center;padding:5px;flex-shrink:0;}
+#offline-bar.show{display:block}
+@keyframes fadeIn{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+.page::-webkit-scrollbar{width:3px}
+.page::-webkit-scrollbar-thumb{background:rgba(124,227,246,.15);border-radius:2px}
+</style>
+</head>
+<body>
+
+<div id="offline-bar">⬡ OFFLINE</div>
+<div id="toast"><span class="toast-icon" id="toast-icon">🏆</span><span id="toast-msg"></span></div>
+
+<header>
+  <div class="title-wrapper">
+    <span class="decorator">✻</span>
+    <h1>RESPIRAÇÃO</h1>
+    <span class="decorator">✻</span>
+  </div>
+  <span id="hdr-ratio"></span>
+</header>
+
+<nav class="tabs">
+  <button class="tab active" data-tab="breathe"><span class="tab-icon">≋</span><span>RESPIRAR</span></button>
+  <button class="tab" data-tab="hist"><span class="tab-icon">📊</span><span>HISTÓRICO</span></button>
+  <button class="tab" data-tab="profiles"><span class="tab-icon">👤</span><span>PERFIS</span></button>
+</nav>
+
+<!-- BREATHE -->
+<div class="page active" id="tab-breathe">
+  <div class="breathe-wrap">
+    <div class="profile-bar" id="profileBar"></div>
+    <div class="blob-outer">
+      <div class="blob-container">
+        <svg class="prog-svg" viewBox="0 0 230 230">
+          <circle class="prog-bg" cx="115" cy="115" r="108"/>
+          <circle class="prog-fg" id="progFg" cx="115" cy="115" r="108"/>
+        </svg>
+        <div class="breath-ring ring1" id="ring1"></div>
+        <div class="breath-ring ring2" id="ring2"></div>
+        <div class="breath-ring ring3" id="ring3"></div>
+        <div class="circle-center">
+          <div id="phase-label"></div>
+          <div id="phase-count">—</div>
+          <div id="cycle-info"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="controls">
+    <button class="btn-reset" id="btnReset">↺</button>
+    <button class="btn-start" id="btnStart">▶ &nbsp;INICIAR</button>
+  </div>
+</div>
+
+<!-- HISTÓRICO -->
+<div class="page" id="tab-hist">
+  <div class="hist-body">
+    <div class="hist-stats">
+      <div class="stat-card"><div class="stat-num" id="stat-sessions">0</div><div class="stat-lbl">SESSÕES</div></div>
+      <div class="stat-card"><div class="stat-num" id="stat-total-cycles">0</div><div class="stat-lbl">CICLOS TOTAIS</div></div>
+      <div class="stat-card"><div class="stat-num" id="stat-today">0</div><div class="stat-lbl">HOJE</div><div class="stat-sub" id="stat-today-cycles"></div></div>
+      <div class="stat-card"><div class="stat-num" id="stat-streak">0</div><div class="stat-lbl">DIAS SEGUIDOS</div></div>
+    </div>
+    <div class="record-card" id="recordCard" style="display:none">
+      <div class="record-icon">🏆</div>
+      <div class="record-info">
+        <div class="record-label">RECORDE PESSOAL</div>
+        <div class="record-val" id="record-val"></div>
+        <div class="record-sub" id="record-sub"></div>
+      </div>
+    </div>
+    <div class="hist-section">SESSÕES RECENTES</div>
+    <div class="hist-list" id="histList"></div>
+    <button class="btn-clear-hist" id="btnClearHist">limpar histórico</button>
+  </div>
+</div>
+
+<!-- PROFILES -->
+<div class="page" id="tab-profiles">
+  <div class="profiles-body">
+    <div class="section-title">NOVO PERFIL</div>
+    <div class="new-form">
+      <div class="form-row">
+        <div class="form-label">NOME</div>
+        <input class="form-input" id="inp-name" placeholder="ex: Ansiedade" maxlength="30" autocomplete="off">
+      </div>
+      <div class="nums-row">
+        <div class="num-field"><div class="num-label">INSPIRAR</div><input class="num-input" id="inp-in" type="number" min="1" max="30" value="4"></div>
+        <div class="num-field"><div class="num-label">PAUSA</div><input class="num-input" id="inp-hold1" type="number" min="0" max="30" value="7"></div>
+        <div class="num-field"><div class="num-label">EXPIRAR</div><input class="num-input" id="inp-out" type="number" min="1" max="30" value="4"></div>
+        <div class="num-field"><div class="num-label">PAUSA</div><input class="num-input" id="inp-hold2" type="number" min="0" max="30" value="7"></div>
+      </div>
+      <div id="form-flash" class="flash hide"></div>
+      <button class="btn-save" id="btnSave">+ SALVAR PERFIL</button>
+    </div>
+    <div class="section-title">MEUS PERFIS</div>
+    <div class="profile-list" id="profileList"></div>
+  </div>
+</div>
+
+<script>
+const san = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+
+// ── STORAGE ──
+const SK  = 'respiracao_v2';
+const SKH = 'respiracao_hist_v1';
+
+function loadProfiles() {
+  try {
+    const raw = localStorage.getItem(SK);
+    if (!raw || raw.length > 100000) return null;
+    const d = JSON.parse(raw);
+    if (!Array.isArray(d)) return null;
+    return d.filter(p => p && typeof p.name==='string' && typeof p.inn==='number' && typeof p.hold1==='number' && typeof p.out==='number' && typeof p.hold2==='number').slice(0,50);
+  } catch { return null; }
+}
+function saveProfiles() { try { localStorage.setItem(SK, JSON.stringify(profiles)); } catch {} }
+
+function loadHistory() {
+  try {
+    const raw = localStorage.getItem(SKH);
+    if (!raw || raw.length > 500000) return [];
+    const d = JSON.parse(raw);
+    if (!Array.isArray(d)) return [];
+    return d.filter(h => h && typeof h.profileName==='string' && typeof h.cycles==='number' && typeof h.ts==='number').slice(0,500);
+  } catch { return []; }
+}
+function saveHistory() { try { localStorage.setItem(SKH, JSON.stringify(sessHistory)); } catch {} }
+
+const DEFAULT_PROFILES = [
+  { id:'box',     name:'Box Breathing', inn:4, hold1:4, out:4,  hold2:4 },
+  { id:'478',     name:'4-7-8',         inn:4, hold1:7, out:8,  hold2:0 },
+  { id:'ansied',  name:'Ansiedade',     inn:4, hold1:7, out:4,  hold2:7 },
+  { id:'relaxar', name:'Relaxar',       inn:5, hold1:0, out:7,  hold2:2 },
+  { id:'energia', name:'Energia',       inn:6, hold1:0, out:2,  hold2:0 },
+];
+
+let profiles        = loadProfiles() || JSON.parse(JSON.stringify(DEFAULT_PROFILES));
+let sessHistory     = loadHistory();
+let activeProfileId = profiles[0]?.id || null;
+
+// ── TOAST ──
+let toastTimer;
+function showToast(icon, msg, duration) {
+  duration = duration || 4000;
+  document.getElementById('toast-icon').textContent = icon;
+  document.getElementById('toast-msg').textContent  = msg;
+  const t = document.getElementById('toast');
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(function() { t.classList.remove('show'); }, duration);
+}
+
+// ── FRASES ──
+const FRASES = [
+  { icon:'🌬️', txt:'Cada respiração consciente é um passo em direção à paz interior.' },
+  { icon:'🌊', txt:'Você acabou de dar ao seu sistema nervoso um presente valioso.' },
+  { icon:'✨', txt:'A calma não é ausência de caos — é escolha. E você escolheu bem.' },
+  { icon:'🧘', txt:'Sua mente agradece este momento de silêncio.' },
+  { icon:'🌿', txt:'Respirar com intenção é o ato mais simples de autocuidado.' },
+  { icon:'💧', txt:'Como a água encontra seu nível, sua mente encontrou equilíbrio.' },
+  { icon:'🌙', txt:'Você treinou algo que ninguém pode tirar: presença.' },
+  { icon:'💫', txt:'O ritmo que você praticou hoje ecoa pelo resto do dia.' },
+  { icon:'🌸', txt:'Parar para respirar é um ato de coragem no mundo acelerado.' },
+  { icon:'🌅', txt:'Sessão concluída. Leve essa leveza para o próximo momento.' },
+  { icon:'⚡', txt:'Sistema nervoso reequilibrado. Você está pronto para o que vier.' },
+  { icon:'🕊️', txt:'Alguns minutos de silêncio valem horas de agitação.' },
+  { icon:'🌺', txt:'Você investiu em si mesmo. Isso sempre vale a pena.' },
+];
+function getFrase(cycles) {
+  if (cycles >= 20) return { icon:'🔥', txt:'Sessão extraordinária! ' + cycles + ' ciclos — você é dedicado.' };
+  if (cycles >= 10) return { icon:'⭐', txt:cycles + ' ciclos! Sua disciplina é inspiradora.' };
+  if (cycles >= 5)  return { icon:'💪', txt:cycles + ' ciclos! Sessão poderosa. Corpo e mente agradecem.' };
+  return FRASES[Math.floor(Math.random() * FRASES.length)];
+}
+
+// ── HISTORY ──
+function getBestRecord() {
+  if (sessHistory.length === 0) return null;
+  return sessHistory.reduce(function(best, h) { return h.cycles > best.cycles ? h : best; }, sessHistory[0]);
+}
+
+function saveSession(cycles) {
+  if (cycles < 1) return;
+  var p = activeProfile();
+  var prevBest = getBestRecord();
+  var isRecord = !prevBest || cycles > prevBest.cycles;
+  sessHistory.unshift({ profileName: p ? p.name : '—', profileRatio: p ? p.inn+'-'+p.hold1+'-'+p.out+'-'+p.hold2 : '', cycles: cycles, ts: Date.now() });
+  if (sessHistory.length > 500) sessHistory.pop();
+  saveHistory();
+  if (isRecord) {
+    setTimeout(function() { showToast('🏆', 'Novo recorde! ' + cycles + ' ciclo' + (cycles!==1?'s':'') + ' — parabéns! 🎉', 5000); }, 400);
+  } else {
+    var f = getFrase(cycles);
+    setTimeout(function() { showToast(f.icon, f.txt, 4500); }, 400);
+  }
+}
+
+// ── TIMER STATE ──
+const PHASES     = ['INSPIRAR','PAUSA','EXPIRAR','PAUSA'];
+const PHASE_KEYS = ['inn','hold1','out','hold2'];
+const PHASE_COLORS = ['#00f2fe','#a78bfa','#00f2fe','#a78bfa'];
+var running        = false;
+var rafId          = null;
+var phaseIdx       = 0;
+var phaseStartTime = null;
+var phaseDuration  = 0;
+var cycleCount     = 0;
+var sessionStarted = false;
+
+function activeProfile() {
+  return profiles.find(function(p) { return p.id === activeProfileId; }) || profiles[0];
+}
+
+// ── RING ──
+var progFg = document.getElementById('progFg');
+var PROG_C = 2 * Math.PI * 108; // 678.6
+
+function setCircle(scale, color) {
+  var MIN = 0.45, MAX = 0.96;
+  var s = MIN + (MAX - MIN) * scale;
+  var r1 = document.getElementById('ring1');
+  var r2 = document.getElementById('ring2');
+  var r3 = document.getElementById('ring3');
+  if (r1) r1.style.transform = 'scale(' + s + ')';
+  if (r2) r2.style.transform = 'scale(' + s + ')';
+  if (r3) r3.style.transform = 'scale(' + s + ')';
+  var c = color || '#00f2fe';
+  progFg.style.stroke = c;
+  progFg.style.filter = 'drop-shadow(0 0 6px ' + c + ')';
+}
+
+function setProgress(pct) {
+  var val = pct < 0 ? 0 : pct > 1 ? 1 : pct;
+  progFg.style.strokeDashoffset = PROG_C * (1 - val);
+}
+
+function updateCycleDisplay() {
+  document.getElementById('cycle-info').textContent = cycleCount > 0 ? cycleCount + ' ciclo' + (cycleCount !== 1 ? 's' : '') : '';
+}
+
+// ── LOOP ──
+function startPhase(idx) {
+  var p = activeProfile();
+  phaseIdx = idx % 4;
+  var dur = p[PHASE_KEYS[phaseIdx]];
+  if (dur === 0) { startPhase(phaseIdx + 1); return; }
+  phaseDuration  = dur * 1000;
+  phaseStartTime = performance.now();
+  document.getElementById('phase-label').textContent = PHASES[phaseIdx];
+  runFrame();
+}
+
+function runFrame() {
+  if (!running) return;
+  var elapsed = performance.now() - phaseStartTime;
+  var t = elapsed / phaseDuration;
+  if (t > 1) t = 1;
+  var color   = PHASE_COLORS[phaseIdx];
+  var secLeft = Math.ceil((phaseDuration - elapsed) / 1000);
+  document.getElementById('phase-count').textContent = secLeft > 0 ? secLeft : '';
+
+  if      (phaseIdx === 0) { setCircle(t,   color); setProgress(t); }
+  else if (phaseIdx === 1) { setCircle(1,   color); setProgress(1); }
+  else if (phaseIdx === 2) { setCircle(1-t, color); setProgress(1-t); }
+  else                     { setCircle(0,   color); setProgress(0); }
+
+  if (t < 1) {
+    rafId = requestAnimationFrame(runFrame);
+  } else {
+    if (phaseIdx === 3 || (phaseIdx === 2 && activeProfile().hold2 === 0)) {
+      cycleCount++;
+      updateCycleDisplay();
+    }
+    startPhase(phaseIdx + 1);
+  }
+}
+
+function endSession() {
+  if (cycleCount > 0 && sessionStarted) {
+    saveSession(cycleCount);
+    renderHistory();
+  }
+  sessionStarted = false;
+}
+
+function startStop() {
+  var btn = document.getElementById('btnStart');
+  if (running) {
+    running = false;
+    cancelAnimationFrame(rafId);
+    btn.classList.remove('running');
+    btn.innerHTML = '▶ &nbsp;INICIAR';
+    endSession();
+  } else {
+    running = true;
+    sessionStarted = true;
+    btn.classList.add('running');
+    btn.innerHTML = '⏸ &nbsp;PAUSAR';
+    if (phaseStartTime === null) {
+      cycleCount = 0;
+      updateCycleDisplay();
+      startPhase(0);
+    } else {
+      phaseStartTime = performance.now();
+      startPhase(phaseIdx);
+    }
+  }
+}
+
+function resetBreath() {
+  running = false;
+  cancelAnimationFrame(rafId);
+  endSession();
+  phaseStartTime = null;
+  phaseIdx       = 0;
+  cycleCount     = 0;
+  var btn = document.getElementById('btnStart');
+  btn.classList.remove('running');
+  btn.innerHTML = '▶ &nbsp;INICIAR';
+  document.getElementById('phase-label').textContent = '';
+  document.getElementById('phase-count').textContent = '—';
+  document.getElementById('cycle-info').textContent  = '';
+  setCircle(0, '#00f2fe');
+  setProgress(0);
+}
+
+// ── HISTORY UI ──
+function renderHistory() {
+  var today = new Date().toDateString();
+  var todaySess   = sessHistory.filter(function(h) { return new Date(h.ts).toDateString() === today; });
+  var totalCycles = sessHistory.reduce(function(a,h) { return a + h.cycles; }, 0);
+  var todayCycles = todaySess.reduce(function(a,h) { return a + h.cycles; }, 0);
+  var streak = 0;
+  var days = new Set(sessHistory.map(function(h) { return new Date(h.ts).toDateString(); }));
+  var dd = new Date();
+  while (days.has(dd.toDateString())) { streak++; dd.setDate(dd.getDate()-1); }
+  document.getElementById('stat-sessions').textContent     = sessHistory.length;
+  document.getElementById('stat-total-cycles').textContent = totalCycles;
+  document.getElementById('stat-today').textContent        = todaySess.length;
+  document.getElementById('stat-streak').textContent       = streak;
+  document.getElementById('stat-today-cycles').textContent = todayCycles > 0 ? todayCycles + ' ciclos' : '';
+  var best = getBestRecord();
+  var recCard = document.getElementById('recordCard');
+  if (best) {
+    recCard.style.display = 'flex';
+    document.getElementById('record-val').textContent = best.cycles + ' ciclo' + (best.cycles!==1?'s':'');
+    var bd = new Date(best.ts);
+    document.getElementById('record-sub').textContent = best.profileName + ' · ' + bd.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'2-digit'});
+  } else {
+    recCard.style.display = 'none';
+  }
+  var list = document.getElementById('histList');
+  if (sessHistory.length === 0) { list.innerHTML = '<div class="hist-empty">[ nenhuma sessão registrada ]</div>'; return; }
+  var bestCycles = best ? best.cycles : 0;
+  list.innerHTML = sessHistory.slice(0,60).map(function(h) {
+    var d = new Date(h.ts);
+    var time = d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+    var date = d.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'});
+    var isRec = h.cycles === bestCycles && bestCycles > 0;
+    return '<div class="hist-item' + (isRec?' record-item':'') + '"><div class="hi-left"><div class="hi-profile">' + san(h.profileName) + '<span style="color:var(--dim);margin-left:6px;font-size:10px">' + san(h.profileRatio||'') + '</span></div><div class="hi-time">' + san(date) + ' às ' + san(time) + '</div></div><div class="hi-right"><div class="hi-cycles">' + h.cycles + ' ciclo' + (h.cycles!==1?'s':'') + '</div>' + (isRec?'<div class="hi-record">🏆 RECORDE</div>':'') + '</div></div>';
+  }).join('');
+}
+
+document.getElementById('btnClearHist').addEventListener('click', function() {
+  if (!confirm('Apagar todo o histórico?')) return;
+  sessHistory = []; saveHistory(); renderHistory();
+});
+
+// ── PROFILE BAR ──
+function renderProfileBar() {
+  var bar = document.getElementById('profileBar');
+  bar.innerHTML = profiles.map(function(p) {
+    return '<button class="profile-btn' + (p.id===activeProfileId?' active':'') + '" data-pid="' + san(p.id) + '">' + san(p.name) + '<span style="color:var(--dim);margin-left:6px">' + p.inn + '-' + p.hold1 + '-' + p.out + '-' + p.hold2 + '</span></button>';
+  }).join('');
+  bar.querySelectorAll('.profile-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      if (running || cycleCount > 0) resetBreath();
+      activeProfileId = btn.dataset.pid;
+      renderProfileBar(); updateHdrRatio();
+    });
+  });
+}
+
+function updateHdrRatio() {
+  var p = activeProfile();
+  if (!p) return;
+  document.getElementById('hdr-ratio').textContent = p.inn + '-' + p.hold1 + '-' + p.out + '-' + p.hold2;
+}
+
+// ── PROFILE LIST ──
+var flashTimer2;
+function flashMsg(msg, ok) {
+  var el = document.getElementById('form-flash');
+  el.textContent = msg;
+  el.className = 'flash' + (ok===false?' err':'');
+  clearTimeout(flashTimer2);
+  flashTimer2 = setTimeout(function() { el.classList.add('hide'); }, 2000);
+}
+
+function renderProfileList() {
+  var list = document.getElementById('profileList');
+  if (profiles.length === 0) { list.innerHTML = '<div style="color:var(--dim);font-size:12px;padding:12px 0;text-align:center">[ nenhum perfil ]</div>'; return; }
+  list.innerHTML = profiles.map(function(p) {
+    return '<div class="profile-item' + (p.id===activeProfileId?' active-item':'') + '"><div style="flex:1"><div class="pi-name">' + san(p.name) + '</div><div class="pi-ratio">' + p.inn + '-' + p.hold1 + '-' + p.out + '-' + p.hold2 + '</div><div class="pi-desc">inspirar · pausa · expirar · pausa</div></div><button class="btn-use' + (p.id===activeProfileId?' used':'') + '" data-pid="' + san(p.id) + '">usar</button><button class="btn-del" data-pid="' + san(p.id) + '">✕</button></div>';
+  }).join('');
+  list.querySelectorAll('.btn-use').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      if (running || cycleCount > 0) resetBreath();
+      activeProfileId = btn.dataset.pid;
+      renderProfileBar(); renderProfileList(); updateHdrRatio();
+    });
+  });
+  list.querySelectorAll('.btn-del').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      if (!confirm('Remover este perfil?')) return;
+      var pid = btn.dataset.pid;
+      profiles = profiles.filter(function(p) { return p.id !== pid; });
+      if (activeProfileId === pid) activeProfileId = profiles[0] ? profiles[0].id : null;
+      saveProfiles(); renderProfileBar(); renderProfileList(); updateHdrRatio();
+    });
+  });
+}
+
+document.getElementById('btnSave').addEventListener('click', function() {
+  var name  = document.getElementById('inp-name').value.trim();
+  var inn   = parseInt(document.getElementById('inp-in').value)    || 0;
+  var hold1 = parseInt(document.getElementById('inp-hold1').value) || 0;
+  var out   = parseInt(document.getElementById('inp-out').value)   || 0;
+  var hold2 = parseInt(document.getElementById('inp-hold2').value) || 0;
+  if (!name)  { flashMsg('Digite um nome.', false); return; }
+  if (inn<1)  { flashMsg('Inspirar mínimo 1s.', false); return; }
+  if (out<1)  { flashMsg('Expirar mínimo 1s.', false); return; }
+  if ([inn,hold1,out,hold2].some(function(v){ return v>30; })) { flashMsg('Máximo 30s.', false); return; }
+  if (profiles.length>=50) { flashMsg('Limite de 50 perfis.', false); return; }
+  profiles.push({ id:'p_'+Date.now(), name:name, inn:inn, hold1:hold1, out:out, hold2:hold2 });
+  saveProfiles(); flashMsg('"'+name+'" salvo!');
+  document.getElementById('inp-name').value = '';
+  renderProfileBar(); renderProfileList();
+});
+
+// ── TABS ──
+document.querySelectorAll('.tab').forEach(function(tab) {
+  tab.addEventListener('click', function() {
+    document.querySelectorAll('.tab').forEach(function(t) { t.classList.remove('active'); });
+    document.querySelectorAll('.page').forEach(function(p) { p.classList.remove('active'); });
+    tab.classList.add('active');
+    document.getElementById('tab-'+tab.dataset.tab).classList.add('active');
+    if (tab.dataset.tab==='profiles') renderProfileList();
+    if (tab.dataset.tab==='hist') renderHistory();
+  });
+});
+
+document.getElementById('btnStart').addEventListener('click', startStop);
+document.getElementById('btnReset').addEventListener('click', resetBreath);
+
+// ── OFFLINE ──
+window.addEventListener('online',  function() { document.getElementById('offline-bar').classList.remove('show'); });
+window.addEventListener('offline', function() { document.getElementById('offline-bar').classList.add('show'); });
+if (!navigator.onLine) document.getElementById('offline-bar').classList.add('show');
+
+// ── SERVICE WORKER ──
+var SW='const C=\'respiracao-v3\';self.addEventListener(\'install\',function(e){self.skipWaiting()});self.addEventListener(\'activate\',function(e){e.waitUntil(caches.keys().then(function(ks){return Promise.all(ks.filter(function(k){return k!==C}).map(function(k){return caches.delete(k)}))}))});self.addEventListener(\'fetch\',function(e){e.respondWith(caches.match(e.request).then(function(r){return r||fetch(e.request).catch(function(){return new Response(\'Offline\',{status:503})})}))})};';
+if('serviceWorker'in navigator){var b=new Blob([SW],{type:'application/javascript'});navigator.serviceWorker.register(URL.createObjectURL(b),{scope:'./'}).catch(function(){});}
+
+// ── MANIFEST + ÍCONE ──
+(function(){
+  var manifest={name:'Respiração',short_name:'Respiração',start_url:'.',display:'standalone',background_color:'#000000',theme_color:'#080b12',icons:[{src:PNG192,sizes:'192x192',type:'image/png',purpose:'any maskable'},{src:PNG512,sizes:'512x512',type:'image/png',purpose:'any maskable'}]};
+  var blob=new Blob([JSON.stringify(manifest)],{type:'application/manifest+json'});
+  document.getElementById('manifestLink').href=URL.createObjectURL(blob);
+  var link=document.createElement('link');link.rel='apple-touch-icon';link.href=PNG192;document.head.appendChild(link);
+  var fav=document.createElement('link');fav.rel='icon';fav.href=PNG512;fav.type='image/png';document.head.appendChild(fav);
+})();
+
+// ── INIT ──
+renderProfileBar();
+renderProfileList();
+renderHistory();
+updateHdrRatio();
+setCircle(0, '#00f2fe');
+setProgress(0);
+</script>
+</body>
+</html>
